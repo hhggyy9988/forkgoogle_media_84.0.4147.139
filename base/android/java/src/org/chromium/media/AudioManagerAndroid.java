@@ -205,6 +205,7 @@ class AudioManagerAndroid {
     @CalledByNative
     private static AudioManagerAndroid createAudioManagerAndroid(
             long nativeAudioManagerAndroid) {
+        logd("createAudioManagerAndroid");
         return new AudioManagerAndroid(nativeAudioManagerAndroid);
     }
 

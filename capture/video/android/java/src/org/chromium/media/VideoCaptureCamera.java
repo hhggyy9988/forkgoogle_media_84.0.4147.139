@@ -418,6 +418,7 @@ public class VideoCaptureCamera
 
         mExpectedFrameSize = mCaptureFormat.mWidth * mCaptureFormat.mHeight
                 * ImageFormat.getBitsPerPixel(mCaptureFormat.mPixelFormat) / 8;
+		Log.e(TAG, "mExpectedFrameSize mExpectedFrameSize = " + mExpectedFrameSize);
         for (int i = 0; i < NUM_CAPTURE_BUFFERS; i++) {
             byte[] buffer = new byte[mExpectedFrameSize];
             mCamera.addCallbackBuffer(buffer);
@@ -890,6 +891,7 @@ public class VideoCaptureCamera
     @Override
     public void onPreviewFrame(byte[] data, android.hardware.Camera camera) {
         mPreviewBufferLock.lock();
+        Log.d(TAG, "onPreviewFrame data len = %d", data.length);
         try {
             if (!mIsRunning) {
                 return;

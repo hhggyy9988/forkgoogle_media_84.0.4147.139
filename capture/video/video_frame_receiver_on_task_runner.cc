@@ -32,6 +32,7 @@ void VideoFrameReceiverOnTaskRunner::OnFrameReadyInBuffer(
     std::unique_ptr<VideoCaptureDevice::Client::Buffer::ScopedAccessPermission>
         buffer_read_permission,
     mojom::VideoFrameInfoPtr frame_info) {
+  
   task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&VideoFrameReceiver::OnFrameReadyInBuffer, receiver_,

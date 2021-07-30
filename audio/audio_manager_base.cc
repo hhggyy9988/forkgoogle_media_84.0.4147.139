@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "base/bind.h"
+#include "base/logging.h"
 #include "base/bind_helpers.h"
 #include "base/command_line.h"
 #include "base/macros.h"
@@ -281,7 +282,7 @@ AudioInputStream* AudioManagerBase::MakeAudioInputStream(
     return nullptr;
   }
 
-  DVLOG(2) << "Creating a new AudioInputStream with buffer size = "
+  VLOG(1) << "Creating a new AudioInputStream with buffer size = "
            << params.frames_per_buffer();
 
   AudioInputStream* stream;

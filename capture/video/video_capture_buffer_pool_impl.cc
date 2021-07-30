@@ -25,6 +25,7 @@ VideoCaptureBufferPoolImpl::VideoCaptureBufferPoolImpl(
       next_buffer_id_(0),
       buffer_tracker_factory_(std::move(buffer_tracker_factory)) {
   DCHECK_GT(count, 0);
+  VLOG(1) << "VideoCaptureBufferPoolImpl";
 }
 
 VideoCaptureBufferPoolImpl::~VideoCaptureBufferPoolImpl() = default;
@@ -32,6 +33,7 @@ VideoCaptureBufferPoolImpl::~VideoCaptureBufferPoolImpl() = default;
 base::UnsafeSharedMemoryRegion
 VideoCaptureBufferPoolImpl::DuplicateAsUnsafeRegion(int buffer_id) {
   base::AutoLock lock(lock_);
+  VLOG(1) << "DuplicateAsUnsafeRegion";
 
   VideoCaptureBufferTracker* tracker = GetTracker(buffer_id);
   if (!tracker) {
@@ -44,6 +46,7 @@ VideoCaptureBufferPoolImpl::DuplicateAsUnsafeRegion(int buffer_id) {
 mojo::ScopedSharedBufferHandle
 VideoCaptureBufferPoolImpl::DuplicateAsMojoBuffer(int buffer_id) {
   base::AutoLock lock(lock_);
+  VLOG(1) << "DuplicateAsMojoBuffer";
 
   VideoCaptureBufferTracker* tracker = GetTracker(buffer_id);
   if (!tracker) {
@@ -56,6 +59,8 @@ VideoCaptureBufferPoolImpl::DuplicateAsMojoBuffer(int buffer_id) {
 mojom::SharedMemoryViaRawFileDescriptorPtr
 VideoCaptureBufferPoolImpl::CreateSharedMemoryViaRawFileDescriptorStruct(
     int buffer_id) {
+	VLOG(1) << "CreateSharedMemoryViaRawFileDescriptorStruct";
+
 // This requires platforms where base::SharedMemoryHandle is backed by a
 // file descriptor.
 #if defined(OS_LINUX)
@@ -89,6 +94,7 @@ VideoCaptureBufferPoolImpl::CreateSharedMemoryViaRawFileDescriptorStruct(
 std::unique_ptr<VideoCaptureBufferHandle>
 VideoCaptureBufferPoolImpl::GetHandleForInProcessAccess(int buffer_id) {
   base::AutoLock lock(lock_);
+  VLOG(1) << "GetHandleForInProcessAccess";
 
   VideoCaptureBufferTracker* tracker = GetTracker(buffer_id);
   if (!tracker) {
@@ -102,6 +108,7 @@ VideoCaptureBufferPoolImpl::GetHandleForInProcessAccess(int buffer_id) {
 gfx::GpuMemoryBufferHandle VideoCaptureBufferPoolImpl::GetGpuMemoryBufferHandle(
     int buffer_id) {
   base::AutoLock lock(lock_);
+  VLOG(1) << "GetGpuMemoryBufferHandle";
 
   VideoCaptureBufferTracker* tracker = GetTracker(buffer_id);
   if (!tracker) {
@@ -121,6 +128,7 @@ VideoCaptureBufferPoolImpl::ReserveForProducer(
     int* buffer_id,
     int* buffer_id_to_drop) {
   base::AutoLock lock(lock_);
+  VLOG(1) << "ReserveResult";
   return ReserveForProducerInternal(dimensions, format, strides,
                                     frame_feedback_id, buffer_id,
                                     buffer_id_to_drop);
@@ -128,6 +136,7 @@ VideoCaptureBufferPoolImpl::ReserveForProducer(
 
 void VideoCaptureBufferPoolImpl::RelinquishProducerReservation(int buffer_id) {
   base::AutoLock lock(lock_);
+  VLOG(1) << "RelinquishProducerReservation";
   VideoCaptureBufferTracker* tracker = GetTracker(buffer_id);
   if (!tracker) {
     NOTREACHED() << "Invalid buffer_id.";
@@ -140,6 +149,7 @@ void VideoCaptureBufferPoolImpl::RelinquishProducerReservation(int buffer_id) {
 void VideoCaptureBufferPoolImpl::HoldForConsumers(int buffer_id,
                                                   int num_clients) {
   base::AutoLock lock(lock_);
+  VLOG(1) << "HoldForConsumers";
   VideoCaptureBufferTracker* tracker = GetTracker(buffer_id);
   if (!tracker) {
     NOTREACHED() << "Invalid buffer_id.";
@@ -157,6 +167,7 @@ void VideoCaptureBufferPoolImpl::HoldForConsumers(int buffer_id,
 void VideoCaptureBufferPoolImpl::RelinquishConsumerHold(int buffer_id,
                                                         int num_clients) {
   base::AutoLock lock(lock_);
+  VLOG(1) << "RelinquishConsumerHold";
   VideoCaptureBufferTracker* tracker = GetTracker(buffer_id);
   if (!tracker) {
     NOTREACHED() << "Invalid buffer_id.";
@@ -170,6 +181,8 @@ void VideoCaptureBufferPoolImpl::RelinquishConsumerHold(int buffer_id,
 
 double VideoCaptureBufferPoolImpl::GetBufferPoolUtilization() const {
   base::AutoLock lock(lock_);
+  VLOG(1) << "GetBufferPoolUtilization";
+  
   int num_buffers_held = 0;
   for (const auto& entry : trackers_) {
     VideoCaptureBufferTracker* const tracker = entry.second.get();
@@ -188,6 +201,7 @@ VideoCaptureBufferPoolImpl::ReserveForProducerInternal(
     int* buffer_id,
     int* buffer_id_to_drop) {
   lock_.AssertAcquired();
+   VLOG(1) << "ReserveForProducerInternal";
 
   // Look for a tracker that's allocated, big enough, and not in use. Track the
   // largest one that's not big enough, in case we have to reallocate a tracker.
@@ -245,6 +259,7 @@ VideoCaptureBufferPoolImpl::ReserveForProducerInternal(
 VideoCaptureBufferTracker* VideoCaptureBufferPoolImpl::GetTracker(
     int buffer_id) {
   auto it = trackers_.find(buffer_id);
+   VLOG(1) << "GetTracker";
   return (it == trackers_.end()) ? nullptr : it->second.get();
 }
 

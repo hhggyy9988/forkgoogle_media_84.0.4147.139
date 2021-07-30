@@ -133,8 +133,7 @@ public class VideoCaptureCamera2 extends VideoCapture {
                                     CaptureRequest request, TotalCaptureResult result) {
                                 // Since |result| is not guaranteed to contain a value for
                                 // key |SENSOR_EXPOSURE_TIME| we have to check for null.
-                                Long exposure_time_value =
-                                        result.get(CaptureResult.SENSOR_EXPOSURE_TIME);
+                                Long exposure_time_value = result.get(CaptureResult.SENSOR_EXPOSURE_TIME);
                                 if (exposure_time_value == null) return;
                                 mLastExposureTimeNs = exposure_time_value;
                             }
@@ -147,6 +146,7 @@ public class VideoCaptureCamera2 extends VideoCapture {
             }
 
             changeCameraStateAndNotify(CameraState.STARTED);
+
             VideoCaptureJni.get().onStarted(
                     mNativeVideoCaptureDeviceAndroid, VideoCaptureCamera2.this);
 
@@ -206,8 +206,7 @@ public class VideoCaptureCamera2 extends VideoCapture {
                     throw new IllegalStateException();
                 }
 
-                if (reader.getWidth() != image.getWidth()
-                        || reader.getHeight() != image.getHeight()) {
+                if (reader.getWidth() != image.getWidth() || reader.getHeight() != image.getHeight()) {
                     VideoCaptureJni.get().onError(mNativeVideoCaptureDeviceAndroid,
                             VideoCaptureCamera2.this,
                             AndroidVideoCaptureError
@@ -218,12 +217,20 @@ public class VideoCaptureCamera2 extends VideoCapture {
                     throw new IllegalStateException();
                 }
 
+				Log.e(TAG, "onI420FrameAvailable");
+
                 VideoCaptureJni.get().onI420FrameAvailable(mNativeVideoCaptureDeviceAndroid,
-                        VideoCaptureCamera2.this, image.getPlanes()[0].getBuffer(),
-                        image.getPlanes()[0].getRowStride(), image.getPlanes()[1].getBuffer(),
-                        image.getPlanes()[2].getBuffer(), image.getPlanes()[1].getRowStride(),
-                        image.getPlanes()[1].getPixelStride(), image.getWidth(), image.getHeight(),
-                        getCameraRotation(), image.getTimestamp());
+                        VideoCaptureCamera2.this,
+                        image.getPlanes()[0].getBuffer(),
+                        image.getPlanes()[0].getRowStride(),
+                        image.getPlanes()[1].getBuffer(),
+                        image.getPlanes()[2].getBuffer(),
+                        image.getPlanes()[1].getRowStride(),
+                        image.getPlanes()[1].getPixelStride(),
+                        image.getWidth(),
+                        image.getHeight(),
+                        getCameraRotation(),
+                        image.getTimestamp());
             } catch (IllegalStateException ex) {
                 Log.e(TAG, "acquireLatestImage():", ex);
             }
@@ -935,8 +942,7 @@ public class VideoCaptureCamera2 extends VideoCapture {
             try {
                 TraceEvent.instant("VideoCaptureCamera2.java",
                         "TakePhotoTask.run calling mCameraDevice.createCaptureSession()");
-                mCameraDevice.createCaptureSession(
-                        surfaceList, sessionListener, mCameraThreadHandler);
+                mCameraDevice.createCaptureSession(surfaceList, sessionListener, mCameraThreadHandler);
             } catch (CameraAccessException | IllegalArgumentException | SecurityException ex) {
                 Log.e(TAG, "createCaptureSession: " + ex);
                 notifyTakePhotoError(mCallbackId);
@@ -1051,15 +1057,17 @@ public class VideoCaptureCamera2 extends VideoCapture {
             // Create an ImageReader and plug a thread looper into it to have
             // readback take place on its own thread.
             mImageReader = ImageReader.newInstance(mCaptureFormat.getWidth(),
-                    mCaptureFormat.getHeight(), mCaptureFormat.getPixelFormat(), 2 /* maxImages */);
+                    mCaptureFormat.getHeight(),
+                    mCaptureFormat.getPixelFormat(),
+                    2 /* maxImages */);
+
             final CrPreviewReaderListener imageReaderListener = new CrPreviewReaderListener();
             mImageReader.setOnImageAvailableListener(imageReaderListener, mCameraThreadHandler);
 
             try {
                 // TEMPLATE_PREVIEW specifically means "high frame rate is given
                 // priority over the highest-quality post-processing".
-                mPreviewRequestBuilder =
-                        mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+                mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             } catch (CameraAccessException | IllegalArgumentException | SecurityException ex) {
                 Log.e(TAG, "createCaptureRequest: ", ex);
                 return false;
@@ -1076,8 +1084,10 @@ public class VideoCaptureCamera2 extends VideoCapture {
             // A series of configuration options in the PreviewBuilder
             mPreviewRequestBuilder.set(
                     CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+                    
             mPreviewRequestBuilder.set(
                     CaptureRequest.NOISE_REDUCTION_MODE, CameraMetadata.NOISE_REDUCTION_MODE_FAST);
+
             mPreviewRequestBuilder.set(CaptureRequest.EDGE_MODE, CameraMetadata.EDGE_MODE_FAST);
 
             // Depending on the resolution and other parameters, stabilization might not be
@@ -1111,8 +1121,7 @@ public class VideoCaptureCamera2 extends VideoCapture {
             mPreviewRequest = mPreviewRequestBuilder.build();
 
             try {
-                mCameraDevice.createCaptureSession(
-                        surfaceList, new CrPreviewSessionListener(mPreviewRequest), null);
+                mCameraDevice.createCaptureSession(surfaceList, new CrPreviewSessionListener(mPreviewRequest), null);
             } catch (CameraAccessException | IllegalArgumentException | SecurityException ex) {
                 Log.e(TAG, "createCaptureSession: ", ex);
                 return false;
@@ -1439,6 +1448,7 @@ public class VideoCaptureCamera2 extends VideoCapture {
         return formatList.toArray(new VideoCaptureFormat[formatList.size()]);
     }
 
+    // call from C++
     VideoCaptureCamera2(int id, long nativeVideoCaptureDeviceAndroid) {
         super(id, nativeVideoCaptureDeviceAndroid);
 
@@ -1461,11 +1471,13 @@ public class VideoCaptureCamera2 extends VideoCapture {
         mCameraThreadHandler.getLooper().quit();
     }
 
+	// call from C++
     @Override
     public boolean allocate(int width, int height, int frameRate, boolean enableFaceDetection) {
         Log.d(TAG, "allocate: requested (%d x %d) @%dfps", width, height, frameRate);
         VideoCaptureJni.get().dCheckCurrentlyOnIncomingTaskRunner(
                 mNativeVideoCaptureDeviceAndroid, VideoCaptureCamera2.this);
+
         synchronized (mCameraStateLock) {
             if (mCameraState == CameraState.OPENING || mCameraState == CameraState.CONFIGURING) {
                 Log.e(TAG, "allocate() invoked while Camera is busy opening/configuring.");
@@ -1488,9 +1500,7 @@ public class VideoCaptureCamera2 extends VideoCapture {
         int capture_width = width;
         int capture_height = height;
         if (mCameraNativeOrientation == 0 || mCameraNativeOrientation == 180) {
-            Log.d(TAG,
-                    "Flipping capture width and height to match device's "
-                            + "natural orientation");
+            Log.d(TAG,"Flipping capture width and height to match device's "  + "natural orientation");
             capture_width = height;
             capture_height = width;
         }
@@ -1519,6 +1529,7 @@ public class VideoCaptureCamera2 extends VideoCapture {
             framerateRanges.add(new FramerateRange(
                     range.getLower() * fpsUnitFactor, range.getUpper() * fpsUnitFactor));
         }
+
         final FramerateRange aeFramerateRange =
                 getClosestFramerateRange(framerateRanges, frameRate * 1000);
         mAeFpsRange = new Range<Integer>(
@@ -1527,8 +1538,11 @@ public class VideoCaptureCamera2 extends VideoCapture {
                 closestSupportedSize.getHeight(), mAeFpsRange.getLower(), mAeFpsRange.getUpper());
 
         // |mCaptureFormat| is also used to configure the ImageReader.
-        mCaptureFormat = new VideoCaptureFormat(closestSupportedSize.getWidth(),
-                closestSupportedSize.getHeight(), frameRate, ImageFormat.YUV_420_888);
+        mCaptureFormat = new VideoCaptureFormat(
+                closestSupportedSize.getWidth(),
+                closestSupportedSize.getHeight(),
+                frameRate,
+                ImageFormat.YUV_420_888);
 
         // TODO(mcasas): The following line is correct for N5 with prerelease Build,
         // but NOT for N7 with a dev Build. Figure out which one to support.
@@ -1540,6 +1554,7 @@ public class VideoCaptureCamera2 extends VideoCapture {
         return true;
     }
 
+    // call from C++
     @Override
     public boolean startCaptureMaybeAsync() {
         VideoCaptureJni.get().dCheckCurrentlyOnIncomingTaskRunner(

@@ -7,6 +7,7 @@
 #include <memory>
 #include <utility>
 
+#include "base/logging.h"
 #include "base/bind.h"
 #include "base/callback_helpers.h"
 #include "base/memory/unsafe_shared_memory_region.h"
@@ -25,6 +26,8 @@ MojoAudioOutputStream::MojoAudioOutputStream(
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK(stream_created_callback_);
   DCHECK(deleter_callback_);
+  VLOG(1) << __func__ << " E";
+  
   delegate_ = std::move(create_delegate_callback).Run(this);
   if (!delegate_) {
     // Failed to initialize the stream. We cannot call |deleter_callback_| yet,
@@ -37,26 +40,31 @@ MojoAudioOutputStream::MojoAudioOutputStream(
 }
 
 MojoAudioOutputStream::~MojoAudioOutputStream() {
+  VLOG(1) << __func__ << " E";
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 }
 
 void MojoAudioOutputStream::Play() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  VLOG(1) << __func__ << " E";
   delegate_->OnPlayStream();
 }
 
 void MojoAudioOutputStream::Pause() {
+  VLOG(1) << __func__ << " E";
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   delegate_->OnPauseStream();
 }
 
 void MojoAudioOutputStream::Flush() {
+  VLOG(1) << __func__ << " E";
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   delegate_->OnFlushStream();
 }
 
 void MojoAudioOutputStream::SetVolume(double volume) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  VLOG(1) << __func__ << " E";
   if (volume < 0 || volume > 1) {
     LOG(ERROR) << "MojoAudioOutputStream::SetVolume(" << volume
                << ") out of range.";
@@ -73,6 +81,7 @@ void MojoAudioOutputStream::OnStreamCreated(
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK(stream_created_callback_);
   DCHECK(foreign_socket);
+  VLOG(1) << __func__ << " E";
 
   if (!shared_memory_region.IsValid()) {
     OnStreamError(/*not used*/ 0);
@@ -88,6 +97,7 @@ void MojoAudioOutputStream::OnStreamCreated(
   receiver_.set_disconnect_handler(base::BindOnce(
       &MojoAudioOutputStream::StreamConnectionLost, base::Unretained(this)));
 
+  //huangguanyuan: IPC call render process(MojoAudioOutputIPC / Created)
   std::move(stream_created_callback_)
       .Run(std::move(pending_stream),
            {base::in_place, std::move(shared_memory_region),
@@ -97,12 +107,14 @@ void MojoAudioOutputStream::OnStreamCreated(
 void MojoAudioOutputStream::OnStreamError(int stream_id) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK(deleter_callback_);
+  VLOG(1) << __func__ << " E";
   std::move(deleter_callback_).Run(/*had_error*/ true);  // Deletes |this|.
 }
 
 void MojoAudioOutputStream::StreamConnectionLost() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK(deleter_callback_);
+  VLOG(1) << __func__ << " E";
   std::move(deleter_callback_).Run(/*had_error*/ false);  // Deletes |this|.
 }
 

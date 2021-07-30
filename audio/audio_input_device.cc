@@ -97,8 +97,7 @@ class AudioInputDevice::AudioThreadCallback
   DISALLOW_COPY_AND_ASSIGN(AudioThreadCallback);
 };
 
-AudioInputDevice::AudioInputDevice(std::unique_ptr<AudioInputIPC> ipc,
-                                   Purpose purpose)
+AudioInputDevice::AudioInputDevice(std::unique_ptr<AudioInputIPC> ipc, Purpose purpose)
     : thread_priority_(ThreadPriorityFromPurpose(purpose)),
       enable_uma_(purpose == AudioInputDevice::Purpose::kUserInput),
       callback_(nullptr),
@@ -133,8 +132,7 @@ void AudioInputDevice::Start() {
     return;
 
   state_ = CREATING_STREAM;
-  ipc_->CreateStream(this, audio_parameters_, agc_is_enabled_,
-                     kRequestedSharedMemoryCount);
+  ipc_->CreateStream(this, audio_parameters_, agc_is_enabled_,  kRequestedSharedMemoryCount);
 }
 
 void AudioInputDevice::Stop() {

@@ -32,8 +32,8 @@ OpenSLESInputStream::OpenSLESInputStream(AudioManagerAndroid* audio_manager,
       started_(false),
       audio_bus_(media::AudioBus::Create(params)),
       no_effects_(params.effects() == AudioParameters::NO_EFFECTS) {
-  DVLOG(2) << __PRETTY_FUNCTION__;
-  DVLOG(1) << "Audio effects enabled: " << !no_effects_;
+  VLOG(1) << __PRETTY_FUNCTION__;
+  VLOG(1) << "Audio effects enabled: " << !no_effects_;
 
   const SampleFormat kSampleFormat = kSampleFormatS16;
 
@@ -54,7 +54,7 @@ OpenSLESInputStream::OpenSLESInputStream(AudioManagerAndroid* audio_manager,
 }
 
 OpenSLESInputStream::~OpenSLESInputStream() {
-  DVLOG(2) << __PRETTY_FUNCTION__;
+  VLOG(1) << __PRETTY_FUNCTION__;
   DCHECK(thread_checker_.CalledOnValidThread());
   DCHECK(!recorder_object_.Get());
   DCHECK(!engine_object_.Get());
@@ -64,7 +64,7 @@ OpenSLESInputStream::~OpenSLESInputStream() {
 }
 
 bool OpenSLESInputStream::Open() {
-  DVLOG(2) << __PRETTY_FUNCTION__;
+  VLOG(1) << __PRETTY_FUNCTION__;
   DCHECK(thread_checker_.CalledOnValidThread());
   if (engine_object_.Get())
     return false;
@@ -78,7 +78,7 @@ bool OpenSLESInputStream::Open() {
 }
 
 void OpenSLESInputStream::Start(AudioInputCallback* callback) {
-  DVLOG(2) << __PRETTY_FUNCTION__;
+  VLOG(1) << __PRETTY_FUNCTION__;
   DCHECK(thread_checker_.CalledOnValidThread());
   DCHECK(callback);
   DCHECK(recorder_);
@@ -121,7 +121,7 @@ void OpenSLESInputStream::Start(AudioInputCallback* callback) {
 }
 
 void OpenSLESInputStream::Stop() {
-  DVLOG(2) << __PRETTY_FUNCTION__;
+  VLOG(1) << __PRETTY_FUNCTION__;
   DCHECK(thread_checker_.CalledOnValidThread());
   if (!started_)
     return;
@@ -141,7 +141,7 @@ void OpenSLESInputStream::Stop() {
 }
 
 void OpenSLESInputStream::Close() {
-  DVLOG(2) << __PRETTY_FUNCTION__;
+  VLOG(1) << __PRETTY_FUNCTION__;
   DCHECK(thread_checker_.CalledOnValidThread());
 
   // Stop the stream if it is still recording.
@@ -199,6 +199,7 @@ bool OpenSLESInputStream::CreateRecorder() {
   DCHECK(!recorder_object_.Get());
   DCHECK(!recorder_);
   DCHECK(!simple_buffer_queue_);
+  VLOG(1) << __func__ << " E";
 
   // Initializes the engine object with specific option. After working with the
   // object, we need to free the object and its resources.
@@ -292,6 +293,7 @@ bool OpenSLESInputStream::CreateRecorder() {
 void OpenSLESInputStream::SimpleBufferQueueCallback(
     SLAndroidSimpleBufferQueueItf buffer_queue,
     void* instance) {
+  VLOG(1) << __func__ << " E";
   OpenSLESInputStream* stream =
       reinterpret_cast<OpenSLESInputStream*>(instance);
   stream->ReadBufferQueue();
@@ -301,6 +303,7 @@ void OpenSLESInputStream::ReadBufferQueue() {
   base::AutoLock lock(lock_);
   if (!started_)
     return;
+  VLOG(1) << __func__ << " E";
 
   TRACE_EVENT0("audio", "OpenSLESOutputStream::ReadBufferQueue");
 
@@ -328,6 +331,7 @@ void OpenSLESInputStream::ReadBufferQueue() {
 void OpenSLESInputStream::SetupAudioBuffer() {
   DCHECK(thread_checker_.CalledOnValidThread());
   DCHECK(!audio_data_[0]);
+  VLOG(1) << __func__ << " E";
   for (int i = 0; i < kMaxNumOfBuffersInQueue; ++i) {
     audio_data_[i] = new uint8_t[buffer_size_bytes_];
   }
@@ -335,6 +339,7 @@ void OpenSLESInputStream::SetupAudioBuffer() {
 
 void OpenSLESInputStream::ReleaseAudioBuffer() {
   DCHECK(thread_checker_.CalledOnValidThread());
+  VLOG(1) << __func__ << " E";
   if (audio_data_[0]) {
     for (int i = 0; i < kMaxNumOfBuffersInQueue; ++i) {
       delete[] audio_data_[i];
@@ -345,6 +350,7 @@ void OpenSLESInputStream::ReleaseAudioBuffer() {
 
 void OpenSLESInputStream::HandleError(SLresult error) {
   DLOG(ERROR) << "OpenSLES Input error " << error;
+  VLOG(1) << __func__ << " E";
   if (callback_)
     callback_->OnError();
 }

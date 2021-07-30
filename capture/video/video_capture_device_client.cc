@@ -157,6 +157,7 @@ VideoCaptureDeviceClient::VideoCaptureDeviceClient(
           std::move(optional_jpeg_decoder_factory_callback)),
       buffer_pool_(std::move(buffer_pool)),
       last_captured_pixel_format_(PIXEL_FORMAT_UNKNOWN) {
+  VLOG(1) << __func__ << " target_buffer_type_" << (int) target_buffer_type_;
   on_started_using_gpu_cb_ =
       base::BindOnce(&VideoFrameReceiver::OnStartedUsingGpuDecode,
                      base::Unretained(receiver_.get()));
@@ -169,7 +170,9 @@ VideoCaptureDeviceClient::VideoCaptureDeviceClient(
     : target_buffer_type_(target_buffer_type),
       receiver_(std::move(receiver)),
       buffer_pool_(std::move(buffer_pool)),
-      last_captured_pixel_format_(PIXEL_FORMAT_UNKNOWN) {}
+      last_captured_pixel_format_(PIXEL_FORMAT_UNKNOWN) {
+	VLOG(1) << __func__ << " target_buffer_type_" << (int) target_buffer_type_;
+}
 #endif  // defined(OS_CHROMEOS)
 
 VideoCaptureDeviceClient::~VideoCaptureDeviceClient() {
@@ -201,6 +204,8 @@ void VideoCaptureDeviceClient::OnIncomingCapturedData(
     base::TimeDelta timestamp,
     int frame_feedback_id) {
   DFAKE_SCOPED_RECURSIVE_LOCK(call_from_producer_);
+  VLOG(1) << __func__ << " OnIncomingCapturedData E";
+  
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("video_and_image_capture"),
                "VideoCaptureDeviceClient::OnIncomingCapturedData");
 
@@ -246,8 +251,10 @@ void VideoCaptureDeviceClient::OnIncomingCapturedData(
 
   const gfx::Size dimensions(destination_width, destination_height);
   Buffer buffer;
+  
   auto reservation_result_code = ReserveOutputBuffer(
       dimensions, PIXEL_FORMAT_I420, frame_feedback_id, &buffer);
+  
   if (reservation_result_code != ReserveResult::kSucceeded) {
     receiver_->OnFrameDropped(
         ConvertReservationFailureToFrameDropReason(reservation_result_code));
@@ -261,14 +268,15 @@ void VideoCaptureDeviceClient::OnIncomingCapturedData(
   uint8_t* u_plane_data;
   uint8_t* v_plane_data;
   int yplane_stride, uv_plane_stride;
-  GetI420BufferAccess(buffer, dimensions, &y_plane_data, &u_plane_data,
-                      &v_plane_data, &yplane_stride, &uv_plane_stride);
+  GetI420BufferAccess(buffer, dimensions, &y_plane_data, &u_plane_data, &v_plane_data, &yplane_stride, &uv_plane_stride);
 
   int crop_x = 0;
   int crop_y = 0;
   libyuv::FourCC fourcc_format = libyuv::FOURCC_ANY;
 
   bool flip = false;
+  VLOG(1) << __func__ << " format.pixel_format = " << format.pixel_format;
+
   switch (format.pixel_format) {
     case PIXEL_FORMAT_UNKNOWN:  // Color format not set.
       break;
@@ -369,8 +377,13 @@ void VideoCaptureDeviceClient::OnIncomingCapturedData(
 
   const VideoCaptureFormat output_format =
       VideoCaptureFormat(dimensions, format.frame_rate, PIXEL_FORMAT_I420);
-  OnIncomingCapturedBufferExt(std::move(buffer), output_format, color_space,
-                              reference_time, timestamp, gfx::Rect(dimensions),
+
+  OnIncomingCapturedBufferExt(std::move(buffer),
+                              output_format,
+                              color_space,
+                              reference_time,
+                              timestamp,
+                              gfx::Rect(dimensions),
                               VideoFrameMetadata());
 }
 
@@ -478,8 +491,8 @@ VideoCaptureDeviceClient::ReserveOutputBuffer(const gfx::Size& frame_size,
   DCHECK_NE(VideoCaptureBufferPool::kInvalidId, buffer_id);
 
   if (!base::Contains(buffer_ids_known_by_receiver_, buffer_id)) {
-    media::mojom::VideoBufferHandlePtr buffer_handle =
-        media::mojom::VideoBufferHandle::New();
+    media::mojom::VideoBufferHandlePtr buffer_handle =  media::mojom::VideoBufferHandle::New();
+	VLOG(1) << __func__ << " target_buffer_type_" << (int) target_buffer_type_;
     switch (target_buffer_type_) {
       case VideoCaptureBufferType::kSharedMemory:
         buffer_handle->set_shared_buffer_handle(
@@ -541,10 +554,11 @@ void VideoCaptureDeviceClient::OnIncomingCapturedBufferExt(
   info->metadata = metadata.GetInternalValues().Clone();
 
   buffer_pool_->HoldForConsumers(buffer.id, 1);
+
   receiver_->OnFrameReadyInBuffer(
-      buffer.id, buffer.frame_feedback_id,
-      std::make_unique<ScopedBufferPoolReservation<ConsumerReleaseTraits>>(
-          buffer_pool_, buffer.id),
+      buffer.id,
+      buffer.frame_feedback_id,
+      std::make_unique<ScopedBufferPoolReservation<ConsumerReleaseTraits>>(buffer_pool_, buffer.id),
       std::move(info));
 }
 

@@ -7,6 +7,7 @@
 #include <cmath>
 
 #include "base/bind.h"
+#include "base/logging.h"
 #include "base/bind_helpers.h"
 #include "base/logging.h"
 #include "base/single_thread_task_runner.h"
@@ -34,6 +35,7 @@ AudioTrackOutputStream::AudioTrackOutputStream(AudioManagerBase* manager,
     : params_(params),
       audio_manager_(manager),
       tick_clock_(base::DefaultTickClock::GetInstance()) {
+  VLOG(1) << __func__ << " E";
   if (!params_.IsBitstreamFormat()) {
     audio_bus_ = AudioBus::Create(params_);
   }
@@ -41,12 +43,14 @@ AudioTrackOutputStream::AudioTrackOutputStream(AudioManagerBase* manager,
 
 AudioTrackOutputStream::~AudioTrackOutputStream() {
   DCHECK(!callback_);
+  VLOG(1) << __func__ << " E";
 }
 
 bool AudioTrackOutputStream::Open() {
   DCHECK(audio_manager_->GetTaskRunner()->BelongsToCurrentThread());
   JNIEnv* env = AttachCurrentThread();
   j_audio_output_stream_.Reset(Java_AudioTrackOutputStream_create(env));
+  VLOG(1) << __func__ << " E";
 
   int format = kEncodingPcm16bit;
   if (params_.IsBitstreamFormat()) {
@@ -67,6 +71,7 @@ bool AudioTrackOutputStream::Open() {
 void AudioTrackOutputStream::Start(AudioSourceCallback* callback) {
   DCHECK(audio_manager_->GetTaskRunner()->BelongsToCurrentThread());
   callback_ = callback;
+  VLOG(1) << __func__ << " E";
   Java_AudioTrackOutputStream_start(AttachCurrentThread(),
                                     j_audio_output_stream_,
                                     reinterpret_cast<intptr_t>(this));
@@ -76,6 +81,7 @@ void AudioTrackOutputStream::Stop() {
   DCHECK(audio_manager_->GetTaskRunner()->BelongsToCurrentThread());
   Java_AudioTrackOutputStream_stop(AttachCurrentThread(),
                                    j_audio_output_stream_);
+  VLOG(1) << __func__ << " E";
   callback_ = nullptr;
 }
 
@@ -147,6 +153,7 @@ ScopedJavaLocalRef<jobject> AudioTrackOutputStream::OnMoreData(
         AudioBus::WrapMemory(params_, native_buffer));
     audio_bus->set_is_bitstream_format(true);
 
+    VLOG(1) << __func__ << " E";
     callback_->OnMoreData(delay, tick_clock_->NowTicks(), 0, audio_bus.get());
 
     if (audio_bus->GetBitstreamDataSize() <= 0)
@@ -160,6 +167,7 @@ ScopedJavaLocalRef<jobject> AudioTrackOutputStream::OnMoreData(
   // For PCM format, we need extra memory to convert planar float32 into
   // interleaved int16.
 
+   VLOG(1) << __func__ << " E";
   callback_->OnMoreData(delay, tick_clock_->NowTicks(), 0, audio_bus_.get());
 
   int16_t* native_bus = reinterpret_cast<int16_t*>(native_buffer);

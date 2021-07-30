@@ -11,6 +11,7 @@
 #include "base/android/jni_string.h"
 #include "base/android/scoped_java_ref.h"
 #include "base/bind.h"
+#include "base/logging.h"
 #include "base/files/file_path.h"
 #include "base/logging.h"
 #include "base/strings/string_number_conversions.h"
@@ -84,20 +85,22 @@ AudioManagerAndroid::AudioManagerAndroid(
       communication_mode_is_on_(false),
       output_volume_override_set_(false),
       output_volume_override_(0) {
+  VLOG(1) << __func__ << " E";
   SetMaxOutputStreamsAllowed(kMaxOutputStreams);
 }
 
 AudioManagerAndroid::~AudioManagerAndroid() = default;
 
 void AudioManagerAndroid::InitializeIfNeeded() {
+  VLOG(1) << __func__ << " E";
   GetTaskRunner()->PostTask(
-      FROM_HERE, base::BindOnce(base::IgnoreResult(
-                                    &AudioManagerAndroid::GetJavaAudioManager),
+      FROM_HERE, base::BindOnce(base::IgnoreResult(&AudioManagerAndroid::GetJavaAudioManager),
                                 base::Unretained(this)));
 }
 
 void AudioManagerAndroid::ShutdownOnAudioThread() {
   AudioManagerBase::ShutdownOnAudioThread();
+  VLOG(1) << __func__ << " E";
 
   // Destory java android manager here because it can only be accessed on the
   // audio thread.
@@ -120,6 +123,7 @@ bool AudioManagerAndroid::HasAudioInputDevices() {
 void AudioManagerAndroid::GetAudioInputDeviceNames(
     AudioDeviceNames* device_names) {
   DCHECK(GetTaskRunner()->BelongsToCurrentThread());
+  VLOG(1) << __func__ << " E";
 
   // Always add default device parameters as first element.
   DCHECK(device_names->empty());
@@ -128,8 +132,7 @@ void AudioManagerAndroid::GetAudioInputDeviceNames(
   // Get list of available audio devices.
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobjectArray> j_device_array =
-      Java_AudioManagerAndroid_getAudioInputDeviceNames(env,
-                                                        GetJavaAudioManager());
+      Java_AudioManagerAndroid_getAudioInputDeviceNames(env,GetJavaAudioManager());
   if (j_device_array.is_null()) {
     // Most probable reason for a NULL result here is that the process lacks
     // MODIFY_AUDIO_SETTINGS or RECORD_AUDIO permissions.
@@ -154,6 +157,7 @@ void AudioManagerAndroid::GetAudioInputDeviceNames(
 
 void AudioManagerAndroid::GetAudioOutputDeviceNames(
     AudioDeviceNames* device_names) {
+  VLOG(1) << __func__ << " E";
   // TODO(henrika): enumerate using GetAudioInputDeviceNames().
   AddDefaultDevice(device_names);
 }
@@ -161,6 +165,7 @@ void AudioManagerAndroid::GetAudioOutputDeviceNames(
 AudioParameters AudioManagerAndroid::GetInputStreamParameters(
     const std::string& device_id) {
   DCHECK(GetTaskRunner()->BelongsToCurrentThread());
+  VLOG(1) << __func__ << " E";
 
   // Use mono as preferred number of input channels on Android to save
   // resources. Using mono also avoids a driver issue seen on Samsung
@@ -211,6 +216,7 @@ AudioInputStream* AudioManagerAndroid::MakeAudioInputStream(
   bool has_no_input_streams = HasNoAudioInputStreams();
   AudioInputStream* stream = AudioManagerBase::MakeAudioInputStream(
       params, device_id, AudioManager::LogCallback());
+  VLOG(1) << __func__ << " E";
 
   // By default, the audio manager for Android creates streams intended for
   // real-time VoIP sessions and therefore sets the audio mode to
@@ -248,6 +254,7 @@ AudioOutputStream* AudioManagerAndroid::MakeLinearOutputStream(
     const LogCallback& log_callback) {
   DCHECK_EQ(AudioParameters::AUDIO_PCM_LINEAR, params.format());
   DCHECK(GetTaskRunner()->BelongsToCurrentThread());
+  VLOG(1) << __func__ << " E";
 
   if (UseAAudio())
     return new AAudioOutputStream(this, params, AAUDIO_USAGE_MEDIA);
@@ -261,6 +268,7 @@ AudioOutputStream* AudioManagerAndroid::MakeLowLatencyOutputStream(
     const LogCallback& log_callback) {
   DLOG_IF(ERROR, !device_id.empty()) << "Not implemented!";
   DCHECK_EQ(AudioParameters::AUDIO_PCM_LOW_LATENCY, params.format());
+  VLOG(1) << __func__ << " E";
 
   if (UseAAudio()) {
     const aaudio_usage_t usage = communication_mode_is_on_
@@ -282,6 +290,7 @@ AudioOutputStream* AudioManagerAndroid::MakeBitstreamOutputStream(
     const std::string& device_id,
     const LogCallback& log_callback) {
   DCHECK(params.IsBitstreamFormat());
+  VLOG(1) << __func__ << " E";
   return new AudioTrackOutputStream(this, params);
 }
 
@@ -289,6 +298,7 @@ AudioInputStream* AudioManagerAndroid::MakeLinearInputStream(
     const AudioParameters& params,
     const std::string& device_id,
     const LogCallback& log_callback) {
+  VLOG(1) << __func__ << " E";
   // TODO(henrika): add support for device selection if/when any client
   // needs it.
   DLOG_IF(ERROR, !device_id.empty()) << "Not implemented!";
@@ -304,6 +314,7 @@ AudioInputStream* AudioManagerAndroid::MakeLowLatencyInputStream(
   DCHECK(GetTaskRunner()->BelongsToCurrentThread());
   DCHECK_EQ(AudioParameters::AUDIO_PCM_LOW_LATENCY, params.format());
   DLOG_IF(ERROR, device_id.empty()) << "Invalid device ID!";
+  VLOG(1) << __func__ << " E";
 
   // Use the device ID to select the correct input device.
   // Note that the input device is always associated with a certain output
@@ -403,6 +414,8 @@ bool AudioManagerAndroid::HasNoAudioInputStreams() {
 
 const JavaRef<jobject>& AudioManagerAndroid::GetJavaAudioManager() {
   DCHECK(GetTaskRunner()->BelongsToCurrentThread());
+  VLOG(1) << __func__ << " E";
+  
   if (j_audio_manager_.is_null()) {
     // Create the Android audio manager on the audio thread.
     DVLOG(2) << "Creating Java part of the audio manager";

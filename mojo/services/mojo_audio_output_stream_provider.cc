@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "base/bind.h"
+#include "base/logging.h"
 #include "build/build_config.h"
 #include "media/mojo/mojom/audio_data_pipe.mojom.h"
 #include "mojo/public/cpp/bindings/message.h"
@@ -24,6 +25,7 @@ MojoAudioOutputStreamProvider::MojoAudioOutputStreamProvider(
       observer_(std::move(observer)),
       observer_receiver_(observer_.get()) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  VLOG(1) << __func__ << " E";
   // Unretained is safe since |this| owns |receiver_|.
   receiver_.set_disconnect_handler(
       base::BindOnce(&MojoAudioOutputStreamProvider::CleanUp,
@@ -33,6 +35,7 @@ MojoAudioOutputStreamProvider::MojoAudioOutputStreamProvider(
 }
 
 MojoAudioOutputStreamProvider::~MojoAudioOutputStreamProvider() {
+  VLOG(1) << __func__ << " E";
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 }
 
@@ -41,6 +44,7 @@ void MojoAudioOutputStreamProvider::Acquire(
     mojo::PendingRemote<mojom::AudioOutputStreamProviderClient>
         provider_client) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  VLOG(1) << __func__ << " E";
 // |processing_id| gets dropped here. It's not supported outside of the audio
 // service. As this class is slated for removal, it will not be updated to
 // support audio processing.
@@ -62,17 +66,16 @@ void MojoAudioOutputStreamProvider::Acquire(
 
   mojo::PendingRemote<mojom::AudioOutputStreamObserver> pending_observer;
   observer_receiver_.Bind(pending_observer.InitWithNewPipeAndPassReceiver());
+
   // Unretained is safe since |this| owns |audio_output_|.
   audio_output_.emplace(
-      base::BindOnce(std::move(create_delegate_callback_), params,
-                     std::move(pending_observer)),
-      base::BindOnce(&mojom::AudioOutputStreamProviderClient::Created,
-                     base::Unretained(provider_client_.get())),
-      base::BindOnce(&MojoAudioOutputStreamProvider::CleanUp,
-                     base::Unretained(this)));
+      base::BindOnce(std::move(create_delegate_callback_), params,  std::move(pending_observer)),
+      base::BindOnce(&mojom::AudioOutputStreamProviderClient::Created, base::Unretained(provider_client_.get())),
+      base::BindOnce(&MojoAudioOutputStreamProvider::CleanUp, base::Unretained(this)));
 }
 
 void MojoAudioOutputStreamProvider::CleanUp(bool had_error) {
+  VLOG(1) << __func__ << " E";
   if (had_error) {
     provider_client_.ResetWithReason(
         static_cast<uint32_t>(media::mojom::AudioOutputStreamObserver::
@@ -84,6 +87,7 @@ void MojoAudioOutputStreamProvider::CleanUp(bool had_error) {
 
 void MojoAudioOutputStreamProvider::BadMessage(const std::string& error) {
   mojo::ReportBadMessage(error);
+  VLOG(1) << __func__ << " E";
   std::move(deleter_callback_).Run(this);  // deletes |this|.
 }
 

@@ -134,10 +134,13 @@ void VideoCaptureDeviceAndroid::AllocateAndStart(
 
   JNIEnv* env = AttachCurrentThread();
 
+  //hgy call java obj method.
   jboolean ret = Java_VideoCapture_allocate(
-      env, j_capture_, params.requested_format.frame_size.width(),
+      env, j_capture_, 
+      params.requested_format.frame_size.width(),
       params.requested_format.frame_size.height(),
-      params.requested_format.frame_rate, params.enable_face_detection);
+      params.requested_format.frame_rate,
+      params.enable_face_detection);
   if (!ret) {
     SetErrorState(media::VideoCaptureError::kAndroidFailedToAllocate, FROM_HERE,
                   "failed to allocate");
@@ -166,10 +169,11 @@ void VideoCaptureDeviceAndroid::AllocateAndStart(
         capture_format_.frame_rate);
   }
 
-  DVLOG(1) << __func__ << " requested ("
+  VLOG(1) << __func__ << " requested ("
            << capture_format_.frame_size.ToString() << ")@ "
            << capture_format_.frame_rate << "fps";
 
+  //hgy call java obj method.
   ret = Java_VideoCapture_startCaptureMaybeAsync(env, j_capture_);
   if (!ret) {
     SetErrorState(media::VideoCaptureError::kAndroidFailedToStartCapture,
@@ -277,6 +281,7 @@ void VideoCaptureDeviceAndroid::OnFrameAvailable(
   if (!IsClientConfigured())
     return;
 
+  LOG(ERROR) << "VideoCaptureDeviceAndroid::OnFrameAvailable: E";
   const base::TimeTicks current_time = base::TimeTicks::Now();
   ProcessFirstFrameAvailable(current_time);
   // Using |expected_next_frame_time_| to estimate a proper capture timestamp
@@ -323,6 +328,8 @@ void VideoCaptureDeviceAndroid::OnI420FrameAvailable(JNIEnv* env,
                                                      jlong timestamp) {
   if (!IsClientConfigured())
     return;
+ 
+  LOG(ERROR) << "VideoCaptureDeviceAndroid::OnI420FrameAvailable: E";
   const int64_t absolute_micro =
       timestamp / base::Time::kNanosecondsPerMicrosecond;
   const base::TimeDelta capture_time =
@@ -358,8 +365,7 @@ void VideoCaptureDeviceAndroid::OnI420FrameAvailable(JNIEnv* env,
                            buffer.get() + y_plane_length + uv_plane_length,
                            width / 2, width, height);
 
-  SendIncomingDataToClient(buffer.get(), buffer_length, rotation, current_time,
-                           capture_time);
+  SendIncomingDataToClient(buffer.get(), buffer_length, rotation, current_time, capture_time);
 }
 
 void VideoCaptureDeviceAndroid::OnError(JNIEnv* env,
@@ -628,6 +634,8 @@ void VideoCaptureDeviceAndroid::SendIncomingDataToClient(
   base::AutoLock lock(lock_);
   if (!client_)
     return;
+
+  VLOG(1) << __func__ << " SendIncomingDataToClient E";
   client_->OnIncomingCapturedData(
       data, length, capture_format_, capture_color_space_, rotation,
       false /* flip_y */, reference_time, timestamp);
